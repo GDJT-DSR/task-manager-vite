@@ -4,17 +4,24 @@ import { ref } from "vue";
 import { router } from "./router";
 
 export const isMobileRef = ref(isMobile());
+
 function isMobile(): boolean {
   return window.innerWidth < 768;
 }
+
 window.addEventListener("resize", () => {
   isMobileRef.value = isMobile();
 });
 
 // 授权请求相关
-// 正在refresh的Promise对象
 let refreshing: Promise<void> | null = null;
 let aborts = new Set<AbortController>();
+let token = "";
+
+// 正在refresh的Promise对象
+if (window.location.pathname !== "/login") {
+  _refresh().catch(() => {});
+}
 
 // 用于refresh
 function _refresh(): Promise<void> {
@@ -32,7 +39,8 @@ function _refresh(): Promise<void> {
         router.currentRoute.value.name == "home" && router.push("/login");
         throw new Error();
       }
-      localStorage.setItem("at", body.data.access_token as string);
+      // localStorage.setItem("at", body.data.access_token as string);
+      token = body.data.access_token as string;
     })
     .finally(() => {
       refreshing = null;
@@ -42,6 +50,7 @@ function _refresh(): Promise<void> {
 }
 
 type methods = "get" | "post" | "put" | "delete";
+
 export async function doRequest<T>(
   url: string,
   method: methods,
@@ -53,12 +62,13 @@ export async function doRequest<T>(
   }
   await refreshing;
   let needRetry = true;
-  const token = localStorage.getItem("at");
+  // const token = localStorage.getItem("at");
   if (!token) {
     // 用户没有登录
-    await ElMessageBox.alert("您未登录，请先登录");
-    router.push("/login");
-    throw new Error("未登录");
+    await _refresh().catch(() => {
+      needRetry = false;
+    });
+    throw new Error();
   }
   const headers: HeadersInit = {
     Authorization: `Bearer ${token}`,
@@ -90,15 +100,16 @@ export async function doRequest<T>(
     // 清空队列
     aborts.forEach((ac) => ac.abort());
     aborts = new Set();
-    await _refresh().catch((_) => (needRetry = false));
+    await _refresh().catch(() => (needRetry = false));
   } catch (e) {}
   //递归重试
   if (!needRetry) throw new Error("request failed");
   return await doRequest<T>(url, method, body, maxTryTimes - 1);
 }
 
-export function canScore(): boolean {
-  const token = localStorage.getItem("at");
+export async function canScore(): Promise<boolean> {
+  // const token = localStorage.getItem("at");
+  await refreshing;
   if (!token) return false;
   try {
     const permission = (
