@@ -33,7 +33,7 @@
 import { ElForm, ElFormItem, ElButton, ElInput, ElNotification, type FormInstance } from "element-plus";
 import { ref } from "vue";
 import { useRouter } from 'vue-router';
-import { passwordReg } from "../common";
+import { passwordReg, setToken } from "../common";
 import ChangePassword from "./common/ChangePassword.vue";
 
 const router = useRouter()
@@ -112,7 +112,8 @@ async function submit() {
         return;
     }
     // 登录成功
-    localStorage.setItem('at', json.data.access_token);
+    // localStorage.setItem('at', json.data.access_token);
+    setToken(json.data.access_token);
     localStorage.setItem('name', form.value.username);
 
     if (!passwordReg.test(form.value.password)) {

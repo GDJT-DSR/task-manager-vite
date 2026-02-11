@@ -1,26 +1,29 @@
 <template>
-    <el-dialog v-model="dialogFormVisible" title="更改密码" :close-on-click-modal="allowOtherClose"
-        :close-on-press-escape="allowOtherClose" destroy-on-close :fullscreen="isMobileRef">
-        <el-form ref="formRef" :model="form" label-position="right" label-width="100px" :rules="rule">
-            <el-form-item label="原密码" prop="origin">
-                <el-input v-model="form.origin" autocomplete="off" show-password clearable type="password" />
-            </el-form-item>
-            <el-form-item label="新密码" prop="target">
-                <el-input v-model="form.target" autocomplete="off" show-password clearable type="password" />
-            </el-form-item>
-            <el-form-item label="重复密码" prop="repeatPassword">
-                <el-input v-model="form.repeatPassword" autocomplete="off" show-password clearable type="password" />
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <div class="dialog-footer">
-                <el-button @click="dialogFormVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="handleSubmit">
-                    Confirm
-                </el-button>
-            </div>
-        </template>
-    </el-dialog>
+    <teleport to="#teleport">
+        <el-dialog v-model="dialogFormVisible" title="更改密码" :close-on-click-modal="allowOtherClose"
+            :close-on-press-escape="allowOtherClose" destroy-on-close :fullscreen="isMobileRef">
+            <el-form ref="formRef" :model="form" label-position="right" label-width="100px" :rules="rule">
+                <el-form-item label="原密码" prop="origin">
+                    <el-input v-model="form.origin" autocomplete="off" show-password clearable type="password" />
+                </el-form-item>
+                <el-form-item label="新密码" prop="target">
+                    <el-input v-model="form.target" autocomplete="off" show-password clearable type="password" />
+                </el-form-item>
+                <el-form-item label="重复密码" prop="repeatPassword">
+                    <el-input v-model="form.repeatPassword" autocomplete="off" show-password clearable
+                        type="password" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">Cancel</el-button>
+                    <el-button type="primary" @click="handleSubmit">
+                        Confirm
+                    </el-button>
+                </div>
+            </template>
+        </el-dialog>
+    </teleport>
 </template>
 
 <script setup lang="ts">

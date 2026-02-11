@@ -186,13 +186,7 @@ async function getScores() {
     console.error(e);
   }
 }
-
-
 const router = useRouter();
-if (!localStorage.getItem('at')) {
-  router.push('/login');
-}
-
 const active = ref<string>('');
 const activeId = computed(() => parseInt(active.value.slice(2)));
 

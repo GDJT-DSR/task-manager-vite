@@ -14,24 +14,7 @@
             <el-collapse-item v-for="sub in task.sub_tasks" :title="sub.title">
                 <!-- <h2>{{ sub.title }}</h2> -->
                 <!-- <div class="sub-desc">{{ sub.desc }}</div> -->
-                <div class="sub-desc" v-if="sub.desc">
-                    <vue-katex :content="sub.desc" />
-                </div>
-                <el-image class="img" v-if="sub.img" :src="sub.img" :preview-src-list="[sub.img]"></el-image>
-                <div class="record" v-if="sub.record && sub.record.content">
-                    <el-divider></el-divider>
-                    <div class=" title">我的回答：</div>
-                    <!-- <div class="answer">{{ sub.record.content }}</div> -->
-                    <div class="answer">
-                        <vue-katex :content="sub.record.content" />
-                    </div>
-                    <el-image class="img" v-if="sub.record.img" :src="sub.record.img"
-                        :preview-src-list="[sub.record.img]" />
-                </div>
-                <div v-if="sub.record && sub.record.score !== -1">
-                    <el-divider></el-divider>
-                    <div class="title">得分：{{ sub.record?.score }}分 / {{ sub.max_score }}分</div>
-                </div>
+                <single-sub-task :sub="sub" @update="getTaskDetail"></single-sub-task>
             </el-collapse-item>
         </el-collapse>
 
@@ -45,16 +28,19 @@ import { computed, onMounted, ref } from 'vue';
 import { doRequest } from '../../common';
 import type { TaskDetails } from '../../interfaces';
 import dayjs from 'dayjs';
-import { ElCol, ElDivider, ElNotification, ElStatistic } from 'element-plus';
-import VueKatex from '../common/VueKatex.vue';
+import { ElCol, ElNotification, ElStatistic } from 'element-plus';
+import SingleSubTask from './SingleSubTask.vue';
 
 const { taskId } = defineProps<{
     taskId: number
 }>();
 const task = ref<TaskDetails>();
 
+const showDialogs = ref<boolean[]>([]);
 onMounted(() => {
-    getTaskDetail();
+    getTaskDetail().then(() => {
+        showDialogs.value = Array(task.value?.sub_tasks.length)
+    })
 })
 const startTime = computed(() => {
     const startAt = task.value?.start_at;
@@ -86,8 +72,8 @@ async function getTaskDetail() {
 
     //     return true;
     // })
-
-    const detail = await doRequest<TaskDetails>(`/api/task/${taskId}/`, 'get');
+    console.log("getTaskDetail");
+    const detail = await doRequest<TaskDetails>(`/api/task/${taskId}`, 'get');
     if (detail.code !== 200 || !detail.data) {
         ElNotification({
             title: '获取信息失败',

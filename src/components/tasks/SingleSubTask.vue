@@ -1,0 +1,107 @@
+<template>
+    <div class="sub-desc" v-if="sub.desc">
+        <vue-katex :content="sub.desc" />
+    </div>
+    <el-image class="img" v-if="sub.img" :src="sub.img" :preview-src-list="[sub.img]"></el-image>
+    <div class="record" v-if="sub.record && sub.record.content">
+        <el-divider></el-divider>
+        <div class=" title">我的回答：</div>
+        <!-- <div class="answer">{{ sub.record.content }}</div> -->
+        <div class="answer">
+            <vue-katex :content="sub.record.content" />
+        </div>
+        <el-image class="img" v-if="sub.record.img" :src="sub.record.img" :preview-src-list="[sub.record.img]" />
+        <br />
+
+    </div>
+    <el-button @click="showDialog = true">{{ sub.record ? '更改回答' : '填写回答' }}</el-button>
+    <!-- <teleport to="#teleport">
+        <el-dialog v-model="showDialog" title="我的回答">
+
+        </el-dialog>
+    </teleport> -->
+    <auto-load :visible="showDialog">
+        <teleport to="#teleport">
+            <el-dialog v-model="showDialog" title="我的回答">
+                <el-form v-model="form">
+                    <el-form-item label="内容" label-position="top">
+                        <el-input v-model="form.content" type="textarea" height="100"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="updateContent">保存</el-button>
+                    </el-form-item>
+                </el-form>
+                <el-upload ref="upload" class="upload-demo" action="" :limit="1" :on-exceed="handleExceed"
+                    :auto-upload="false">
+                    <template #trigger>
+                        <el-button type="primary">选择文件</el-button>
+                    </template>
+                    <el-button class="upload" type="success" @click="submitUpload">
+                        上传
+                    </el-button>
+                    <template #tip>
+                        <div>最多只能上传一个文件，新上传的文件会覆盖旧文件</div>
+                    </template>
+                </el-upload>
+            </el-dialog>
+        </teleport>
+    </auto-load>
+    <div v-if="sub.record && sub.record.score !== -1">
+        <el-divider></el-divider>
+        <div class="title">得分：{{ sub.record?.score }}分 / {{ sub.max_score }}分</div>
+    </div>
+</template>
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import type { SubTask } from '../../interfaces';
+import AutoLoad from '../common/AutoLoad.vue';
+import { genFileId, type UploadInstance, type UploadProps, type UploadRawFile } from 'element-plus';
+import { doRequest } from '../../common';
+
+
+const prop = defineProps<{ sub: SubTask }>();
+const emit = defineEmits(['update']);
+const showDialog = ref(false);
+const form = reactive({
+    content: prop.sub.record?.content ?? ''
+})
+
+
+async function updateContent() {
+    const res = await doRequest<void>(`/api/record/${prop.sub.id}`, 'post', {
+        content: form.content || null
+    });
+    if (res.code !== 200) {
+        ElNotification({
+            title: '更改失败',
+            message: res.msg,
+            type: 'error',
+        });
+    } else {
+        ElNotification({
+            title: "更改成功",
+            type: 'success',
+        });
+        emit('update');
+    }
+    showDialog.value = false;
+}
+
+const upload = ref<UploadInstance>()
+
+const handleExceed: UploadProps['onExceed'] = (files) => {
+    upload.value!.clearFiles()
+    const file = files[0] as UploadRawFile
+    file.uid = genFileId()
+    upload.value!.handleStart(file)
+}
+function submitUpload() {
+
+}
+</script>
+
+<style>
+.upload {
+    margin-left: 5px;
+}
+</style>

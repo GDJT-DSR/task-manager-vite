@@ -18,6 +18,10 @@ let refreshing: Promise<void> | null = null;
 let aborts = new Set<AbortController>();
 let token = "";
 
+export function setToken(tk: string) {
+  token = tk;
+}
+
 // 正在refresh的Promise对象
 if (window.location.pathname !== "/login") {
   _refresh().catch(() => {});
