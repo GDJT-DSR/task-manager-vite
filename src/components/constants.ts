@@ -1,0 +1,2 @@
+export const USER_VIEWPAGE_PERMISSION = 4;
+export const USER_SCORE_PERMISSION = 64;

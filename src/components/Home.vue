@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout-container-demo" style="height: 100vh;">
     <el-aside width="230px" v-if="!isMobileRef">
-      <side-bar @select="selectHandler" :tasks="tasks" :rates="rates"></side-bar>
+      <side-bar @select="selectHandler" :tasks="tasks" :rates="rates" :default-active="defaultActive"></side-bar>
     </el-aside>
 
     <el-container>
@@ -31,10 +31,10 @@
       </el-header>
       <el-main>
         <!-- <TaskList v-if="active.startsWith('1-')" :active-id="activeId" :tasks="tasks"></TaskList> -->
-        <AutoLoad :visible="active.startsWith('1-')">
+        <AutoLoad :visible="active.startsWith('1-')" v-if="tasks">
           <TaskList :active-id="activeId" :tasks="tasks"></TaskList>
         </AutoLoad>
-        <AutoLoad :visible="active.startsWith('2-')">
+        <AutoLoad :visible="active.startsWith('2-')" v-if="rates">
           <RateList :active-id="activeId" :rates="rates"></RateList>
         </AutoLoad>
         <el-empty v-if="!active">
@@ -47,7 +47,7 @@
   </el-container>
   <el-drawer v-if="isMobileRef" v-model="drawer" direction="ltr" :lock-scroll="true" size="min(270px,90%)"
     :with-header="false" body-class="drawer-body">
-    <side-bar @select="selectHandler" :tasks="tasks" :rates="rates"></side-bar>
+    <side-bar @select="selectHandler" :tasks="tasks" :rates="rates" :default-active="defaultActive"></side-bar>
   </el-drawer>
 
   <ChangePassword v-if="showChangePwd" v-model="showChangePwd" :allow-other-close="true"></ChangePassword>
@@ -122,12 +122,13 @@
 // import Swal from 'sweetalert2';
 import { computed, defineAsyncComponent, onMounted, ref, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { canScore, doRequest } from '../common'
+import { getPermission, doRequest } from '../common'
 import type { Task, ScoreTask } from '../interfaces';
 
 import { Menu as IconMenu, Avatar } from '@element-plus/icons-vue'
 import { ElMessageBox, ElNotification } from 'element-plus';
 import { isMobileRef } from '../common';
+import { USER_SCORE_PERMISSION, USER_VIEWPAGE_PERMISSION } from './constants';
 
 const ChangePassword = defineAsyncComponent(() => import('./common/ChangePassword.vue'));
 const TaskList = defineAsyncComponent(() => import('./tasks/TaskList.vue'));
@@ -139,18 +140,23 @@ const showChangePwd = ref(false);
 const username = localStorage.getItem('name')
 
 onMounted(() => {
-  getTasks();
-  canScore().then(b => {
-    b && getScores();
+  // getTasks();
+  // getPermission().then(b => {
+  // b && getScores();
+  // })
+  getPermission().then(permission => {
+    if (permission === -1) { return; }
+    (permission & USER_VIEWPAGE_PERMISSION) && getTasks();
+    (permission & USER_SCORE_PERMISSION) && getScores();
   })
 });
 
-const tasks: Ref<Task[]> = ref([]);
-const rates: Ref<ScoreTask[]> = ref([]);
+const tasks: Ref<Task[] | null> = ref(null);
+const rates: Ref<ScoreTask[] | null> = ref(null);
 
 async function getTasks() {
   try {
-    const body = await doRequest<Task[]>(`/api/task/all`, 'get');
+    const body = await doRequest<Task[]>(`/api/page`, 'get');
     if (body.code !== 200 || !body.data) {
       ElNotification({
         title: '获取任务列表失败',
@@ -188,7 +194,8 @@ async function getScores() {
 }
 const router = useRouter();
 const route = useRoute();
-const active = ref<string>((route.params.id as string | undefined) ?? '');
+const defaultActive = route.params.id as string | undefined;
+const active = ref<string>(defaultActive ?? '');
 const activeId = computed(() => parseInt(active.value.slice(2)));
 
 function selectHandler(index: string) {

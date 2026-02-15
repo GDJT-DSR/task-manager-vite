@@ -66,15 +66,12 @@ export async function doRequest<T>(
   }
 
   let needRetry = true;
+  // const token = localStorage.getItem("at");
+  if (!token) {
+    // 用户没有登录
+    await _refresh();
+  }
   try {
-    // const token = localStorage.getItem("at");
-    if (!token) {
-      // 用户没有登录
-      await _refresh().catch(() => {
-        needRetry = false;
-      });
-      throw new Error();
-    }
     const headers: HeadersInit = {
       Authorization: `Bearer ${token}`,
     };
@@ -103,12 +100,22 @@ export async function doRequest<T>(
     const json = (await resp.json()) as RBody<T>;
     // 清除controller
     aborts.delete(controller);
-    if (json.code !== 401) return json;
-    // 用户登录过期，尝试refresh
-    // 清空队列
-    aborts.forEach((ac) => ac.abort());
-    aborts = new Set();
-    await _refresh().catch(() => (needRetry = false));
+    if (json.code === 401) {
+      // 用户登录过期，尝试refresh
+      // 清空队列
+      aborts.forEach((ac) => ac.abort());
+      aborts = new Set();
+      await _refresh().catch(() => (needRetry = false));
+    } else if (json.code === 429) {
+      ElNotification({
+        title: "请求过于频繁",
+        message: "请稍后再试",
+        type: "error",
+      });
+      return json;
+    } else {
+      return json; // 成功
+    }
   } catch (e) {}
   //递归重试
   if (!needRetry) throw new Error("request failed");
@@ -127,19 +134,18 @@ export function parseToken() {
   };
 }
 
-export async function canScore(): Promise<boolean> {
+export async function getPermission(): Promise<number> {
   // const token = localStorage.getItem("at");
 
   try {
     await refreshing;
-    if (!token) return false;
+    if (!token) return -1;
     const permission = parseToken()?.data?.permission;
     // console.log(parseToken());
-    if (!permission || (permission & 64) == 0) return false;
+    return permission ?? -1;
   } catch (e) {
-    return false;
+    return -1;
   }
-  return true;
 }
 
 export const passwordReg =

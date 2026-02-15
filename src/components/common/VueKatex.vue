@@ -16,6 +16,7 @@ function parse(text: string): string {
         replace(/>/g, '&gt;').
         replace(/"/g, '&quot;').
         replace(/'/g, '&#039;').
+        replace('\\\\', '<br />').
         replace('\n\n', '<br />')
         : katex.renderToString(value)
     ).join('');

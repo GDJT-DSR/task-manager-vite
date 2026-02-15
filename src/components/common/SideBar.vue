@@ -1,7 +1,7 @@
 <template>
     <el-scrollbar>
-        <el-menu @select="selectHandler" :default-openeds="['1', '2']">
-            <el-sub-menu index="1">
+        <el-menu @select="selectHandler" :default-openeds="['1', '2']" :default-active="defaultActive">
+            <el-sub-menu index="1" v-if="tasks">
                 <template #title>
                     <el-icon><icon-menu /></el-icon>
                     <span>任务列表</span>
@@ -18,7 +18,7 @@
                     评分任务
                 </template>
                 <ElMenuItemGroup :title="rateTask.title" v-for="rateTask in rates">
-                    <ElMenuItem v-for="item in rateTask.sub_tasks" :index="`2-${item.id}`" :key="item.id">
+                    <ElMenuItem v-for="item in rateTask.questions" :index="`2-${item.id}`" :key="item.id">
                         {{ item.title }}
                     </ElMenuItem>
                 </ElMenuItemGroup>
@@ -33,8 +33,9 @@ import type { ScoreTask, Task } from '../../interfaces';
 import { ElMenuItem, ElMenuItemGroup } from 'element-plus';
 
 const { tasks, rates } = defineProps<{
-    tasks: Task[],
-    rates?: ScoreTask[]
+    tasks: Task[] | null,
+    rates: ScoreTask[] | null,
+    defaultActive?: string,
 }>();
 
 

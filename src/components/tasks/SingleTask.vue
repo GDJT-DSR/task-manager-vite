@@ -11,7 +11,7 @@
         </el-col>
 
         <el-collapse expand-icon-position="left" class="el-collapse" v-model="opens">
-            <el-collapse-item v-for="(sub) in task.sub_tasks" :key="`${sub.id}-${sub.record?.updated_at ?? ''}`"
+            <el-collapse-item v-for="(sub) in task.questions" :key="`${sub.id}-${sub.answer?.updated_at ?? ''}`"
                 :name="sub.id" :title="sub.title">
                 <!-- <h2>{{ sub.title }}</h2> -->
                 <!-- <div class="sub-desc">{{ sub.desc }}</div> -->
@@ -61,7 +61,7 @@ const endTime = computed(() => {
 })
 
 async function getTaskDetail() {
-    const detail = await doRequest<TaskDetails>(`/api/task/${taskId}`, 'get');
+    const detail = await doRequest<TaskDetails>(`/api/page/${taskId}`, 'get');
     if (detail.code !== 200 || !detail.data) {
         ElNotification({
             title: '获取信息失败',
@@ -76,15 +76,15 @@ async function getTaskDetail() {
 const showTotal = computed<boolean>(() => {
     const v = task.value;
     if (!v) return false;
-    for (let k of v.sub_tasks) {
-        const score = k.record?.score;
+    for (let k of v.questions) {
+        const score = k.answer?.score;
         if (!score || score === -1) {
             return false;
         }
     }
     return true;
 })
-const total = computed(() => task.value?.sub_tasks.reduce<number>((previous, current) => previous + parseScore(current.record?.score), 0));
+const total = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + parseScore(current.answer?.score), 0));
 
 
 function parseScore(score: number | undefined): number {
