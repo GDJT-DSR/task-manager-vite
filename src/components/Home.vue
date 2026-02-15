@@ -121,7 +121,7 @@
 <script setup lang="ts">
 // import Swal from 'sweetalert2';
 import { computed, defineAsyncComponent, onMounted, ref, type Ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { canScore, doRequest } from '../common'
 import type { Task, ScoreTask } from '../interfaces';
 
@@ -187,7 +187,8 @@ async function getScores() {
   }
 }
 const router = useRouter();
-const active = ref<string>('');
+const route = useRoute();
+const active = ref<string>((route.params.id as string | undefined) ?? '');
 const activeId = computed(() => parseInt(active.value.slice(2)));
 
 function selectHandler(index: string) {
@@ -195,6 +196,7 @@ function selectHandler(index: string) {
     drawer.value = false;
   }
   active.value = index;
+  router.push(`/home/${index}`)
 }
 
 async function logout() {

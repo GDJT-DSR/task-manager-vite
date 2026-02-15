@@ -29,6 +29,7 @@ export interface SubTask {
 }
 export interface TaskRecord {
   id: number;
+  updated_at: string;
   content: string;
   img?: string;
   index: number;

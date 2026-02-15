@@ -4,12 +4,16 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: "/",
+      redirect: "/home/",
+    },
+    {
       path: "/login",
       component: () => import("./components/Login.vue"),
       name: "login",
     },
     {
-      path: "/",
+      path: "/home/:id?",
       component: () => import("./components/Home.vue"),
       name: "home",
     },

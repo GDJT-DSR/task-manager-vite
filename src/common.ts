@@ -58,35 +58,39 @@ type methods = "get" | "post" | "put" | "delete";
 export async function doRequest<T>(
   url: string,
   method: methods,
-  body?: Object | undefined,
+  bodyObj?: Object | undefined,
   maxTryTimes: number = 3,
 ): Promise<RBody<T>> {
   if (maxTryTimes <= 0) {
     throw new Error("request failed");
   }
-  await refreshing;
+
   let needRetry = true;
-  // const token = localStorage.getItem("at");
-  if (!token) {
-    // 用户没有登录
-    await _refresh().catch(() => {
-      needRetry = false;
-    });
-    throw new Error();
-  }
-  const headers: HeadersInit = {
-    Authorization: `Bearer ${token}`,
-  };
-  if (body) {
-    headers["Content-Type"] = "application/json";
-  }
-  const stirngBody = body && JSON.stringify(body);
   try {
+    // const token = localStorage.getItem("at");
+    if (!token) {
+      // 用户没有登录
+      await _refresh().catch(() => {
+        needRetry = false;
+      });
+      throw new Error();
+    }
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+    };
+    let body: FormData | string | undefined;
+    if (!(bodyObj instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+      body = bodyObj && JSON.stringify(bodyObj);
+    } else {
+      body = bodyObj;
+    }
+    await refreshing;
     const controller = new AbortController();
     const req = fetch(url, {
       method,
       headers,
-      body: stirngBody,
+      body,
       signal: controller.signal,
     });
 
@@ -108,21 +112,29 @@ export async function doRequest<T>(
   } catch (e) {}
   //递归重试
   if (!needRetry) throw new Error("request failed");
-  return await doRequest<T>(url, method, body, maxTryTimes - 1);
+  return await doRequest<T>(url, method, bodyObj, maxTryTimes - 1);
+}
+
+export function parseToken() {
+  if (!token) return null;
+  return JSON.parse(atob(token.split(".")[1] ?? "")) as {
+    exp: number;
+    iat: number;
+    typ: "access_token" | "refresh_token";
+    data?: {
+      permission?: number;
+    };
+  };
 }
 
 export async function canScore(): Promise<boolean> {
   // const token = localStorage.getItem("at");
-  await refreshing;
-  if (!token) return false;
+
   try {
-    const permission = (
-      JSON.parse(atob(token.split(".")[1] ?? "")) as {
-        data?: {
-          permission?: number;
-        };
-      }
-    ).data?.permission;
+    await refreshing;
+    if (!token) return false;
+    const permission = parseToken()?.data?.permission;
+    // console.log(parseToken());
     if (!permission || (permission & 64) == 0) return false;
   } catch (e) {
     return false;

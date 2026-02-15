@@ -10,8 +10,9 @@
             <el-statistic title="总分" :value="total" />
         </el-col>
 
-        <el-collapse expand-icon-position="left" class="el-collapse">
-            <el-collapse-item v-for="sub in task.sub_tasks" :title="sub.title">
+        <el-collapse expand-icon-position="left" class="el-collapse" v-model="opens">
+            <el-collapse-item v-for="(sub) in task.sub_tasks" :key="`${sub.id}-${sub.record?.updated_at ?? ''}`"
+                :name="sub.id" :title="sub.title">
                 <!-- <h2>{{ sub.title }}</h2> -->
                 <!-- <div class="sub-desc">{{ sub.desc }}</div> -->
                 <single-sub-task :sub="sub" @update="getTaskDetail"></single-sub-task>
@@ -36,12 +37,12 @@ const { taskId } = defineProps<{
 }>();
 const task = ref<TaskDetails>();
 
-const showDialogs = ref<boolean[]>([]);
 onMounted(() => {
-    getTaskDetail().then(() => {
-        showDialogs.value = Array(task.value?.sub_tasks.length)
-    })
+    getTaskDetail()
 })
+const opens = ref<number[]>([]);
+
+
 const startTime = computed(() => {
     const startAt = task.value?.start_at;
     if (!startAt) {
@@ -60,19 +61,6 @@ const endTime = computed(() => {
 })
 
 async function getTaskDetail() {
-    // fetchAuthorized(router, async () => {
-    //     if (!task) { return true; }
-    //     const detail = await doRequest<TaskDetails>(`/api/task/${taskId}/`, 'get', true, undefined);
-    //     if (detail.code === 401) {
-    //         return false;
-    //     } else if (detail.code !== 200) {
-    //         ElNotification
-    //     }
-    //     task.value = detail.data;
-
-    //     return true;
-    // })
-    console.log("getTaskDetail");
     const detail = await doRequest<TaskDetails>(`/api/task/${taskId}`, 'get');
     if (detail.code !== 200 || !detail.data) {
         ElNotification({
@@ -125,9 +113,7 @@ h1 {
     margin: 3%;
 }
 
-.img {
-    width: min(400px, 60vw);
-}
+
 
 .sub-desc {
     padding: 0 .8em;

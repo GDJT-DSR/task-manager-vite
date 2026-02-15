@@ -32,7 +32,7 @@
                     </el-form-item>
                 </el-form>
                 <el-upload ref="upload" class="upload-demo" action="" :limit="1" :on-exceed="handleExceed"
-                    :auto-upload="false">
+                    :http-request="doUpload" :auto-upload="false">
                     <template #trigger>
                         <el-button type="primary">选择文件</el-button>
                     </template>
@@ -55,7 +55,7 @@
 import { reactive, ref } from 'vue';
 import type { SubTask } from '../../interfaces';
 import AutoLoad from '../common/AutoLoad.vue';
-import { genFileId, type UploadInstance, type UploadProps, type UploadRawFile } from 'element-plus';
+import { genFileId, type NotificationParams, type UploadInstance, type UploadProps, type UploadRawFile, type UploadRequestOptions } from 'element-plus';
 import { doRequest } from '../../common';
 
 
@@ -68,7 +68,7 @@ const form = reactive({
 
 
 async function updateContent() {
-    const res = await doRequest<void>(`/api/record/${prop.sub.id}`, 'post', {
+    const res = await doRequest<void>(`/api/record/${prop.sub.id}/submit`, 'post', {
         content: form.content || null
     });
     if (res.code !== 200) {
@@ -78,11 +78,11 @@ async function updateContent() {
             type: 'error',
         });
     } else {
+        emit('update');
         ElNotification({
             title: "更改成功",
             type: 'success',
         });
-        emit('update');
     }
     showDialog.value = false;
 }
@@ -95,7 +95,44 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
     file.uid = genFileId()
     upload.value!.handleStart(file)
 }
+
 function submitUpload() {
+    upload.value!.submit();
+}
+
+async function doUpload(opt: UploadRequestOptions): Promise<void> {
+    const file = opt.file;
+    let param: NotificationParams = {
+        title: "上传文件失败",
+        type: 'error',
+    }
+    if (!file) {
+        ElNotification({
+            ...param,
+            message: "请选择文件"
+        })
+        return;
+    }
+    const form = new FormData();
+    form.append('file', file);
+    try {
+        const resp = await doRequest<void>(`/api/record/${prop.sub.record!.id}/upload`, 'post', form);
+        if (resp.code !== 200) {
+            ElNotification({
+                ...param,
+                message: resp.msg || '服务器错误',
+            })
+        }
+    }
+    catch (e) {
+        ElNotification(param)
+    }
+    ElNotification({
+        title: "上传成功",
+        type: 'success',
+    })
+
+    emit('update')
 
 }
 </script>
@@ -103,5 +140,9 @@ function submitUpload() {
 <style>
 .upload {
     margin-left: 5px;
+}
+
+.img {
+    width: min(400px, 60vw);
 }
 </style>
