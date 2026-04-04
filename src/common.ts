@@ -112,7 +112,7 @@ export async function doRequest<T>(
         message: "请稍后再试",
         type: "error",
       });
-      return json;
+      return {code:200,msg:"none"};
     } else {
       return json; // 成功
     }

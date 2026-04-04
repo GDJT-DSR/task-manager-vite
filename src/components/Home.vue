@@ -157,7 +157,7 @@ const rates: Ref<ScoreTask[] | null> = ref(null);
 async function getTasks() {
   try {
     const body = await doRequest<Task[]>(`/api/page`, 'get');
-    if (body.code !== 200 || !body.data) {
+    if (body.code !== 200) {
       ElNotification({
         title: '获取任务列表失败',
         message: body.msg,
@@ -165,7 +165,9 @@ async function getTasks() {
       })
       return true
     }
-    tasks.value = body.data;
+    if (body.data) {
+      tasks.value = body.data;
+    }
   } catch (e) {
     ElNotification({
       title: '获取任务列表失败',
@@ -207,10 +209,11 @@ function selectHandler(index: string) {
 }
 
 async function logout() {
-  localStorage.removeItem('at');
   try {
     await ElMessageBox.confirm("确认退出登录吗？");
-    router.push('/login')
+    doRequest<void>('/api/user/logout', 'get');
+    localStorage.removeItem('at');
+    router.push('/login');
   } catch (e) { }
 }
 

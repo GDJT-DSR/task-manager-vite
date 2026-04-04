@@ -1,7 +1,7 @@
 <template>
     <div v-for="task in tasks">
         <AutoLoad :visible="activeId === task.id">
-            <SingleTask :task-id="task.id"></SingleTask>
+            <SingleTask :task-id="task.id" :visible="activeId === task.id"></SingleTask>
         </AutoLoad>
     </div>
 </template>

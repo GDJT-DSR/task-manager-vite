@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { ElDescriptions, ElNotification, type FormInstance } from 'element-plus';
-import type { Answer, ScoreAnswer, ScoreQuestionDetail } from '../../interfaces';
+import type { ScoreAnswer } from '../../interfaces';
 import { ref } from 'vue';
 import { doRequest } from '../../common';
 

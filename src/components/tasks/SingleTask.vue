@@ -25,20 +25,21 @@
     </el-scrollbar>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUpdate, onMounted, ref } from 'vue';
 import { doRequest } from '../../common';
 import type { TaskDetails } from '../../interfaces';
 import dayjs from 'dayjs';
 import { ElCol, ElNotification, ElStatistic } from 'element-plus';
 import SingleSubTask from './SingleSubTask.vue';
 
-const { taskId } = defineProps<{
-    taskId: number
+const props = defineProps<{
+    taskId: number,
+    visible: boolean,
 }>();
 const task = ref<TaskDetails>();
 
 onMounted(() => {
-    getTaskDetail()
+    getTaskDetail();
 })
 const opens = ref<number[]>([]);
 
@@ -61,8 +62,8 @@ const endTime = computed(() => {
 })
 
 async function getTaskDetail() {
-    const detail = await doRequest<TaskDetails>(`/api/page/${taskId}`, 'get');
-    if (detail.code !== 200 || !detail.data) {
+    const detail = await doRequest<TaskDetails>(`/api/page/${props.taskId}`, 'get');
+    if (detail.code !== 200) {
         ElNotification({
             title: '获取信息失败',
             message: detail.msg,
@@ -70,7 +71,9 @@ async function getTaskDetail() {
         })
         return;
     }
-    task.value = detail.data;
+    if (detail.data) {
+        task.value = detail.data;
+    }
 }
 
 const showTotal = computed<boolean>(() => {
@@ -94,6 +97,12 @@ function parseScore(score: number | undefined): number {
         return 0;
     }
 }
+
+onBeforeUpdate(()=>{
+    if (props.visible && !task.value) {
+        getTaskDetail();
+    }
+})
 
 </script>
 <style scoped>

@@ -18,11 +18,14 @@ export interface TaskDetails extends Task {
   changable: boolean;
   submittable: boolean;
 }
+
+export type QuestionType = "fill_in" | "choose" | "upload" | "none";
 export interface Question {
   id: number;
   title: string;
   desc?: string;
-  img?: string;
+  type: QuestionType;
+  settings?: any;
   index: number;
   answer?: Answer;
   max_score: number;
