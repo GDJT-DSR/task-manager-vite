@@ -23,12 +23,23 @@ export function setToken(tk: string) {
 }
 
 // 正在refresh的Promise对象
-if (window.location.pathname !== "/login") {
-  _refresh().catch(() => {});
-}
+// if (window.location.pathname !== "/login") {
+//   _refresh().catch(() => {});
+// }
+(function () {
+  let isLogin = window.location.pathname === "/login";
+  _refresh(!isLogin)
+    .then(() => {
+      if (isLogin) {
+        router.push({ name: "home" });
+      }
+    })
+    .catch(() => {});
+})();
+_refresh().catch();
 
 // 用于refresh
-function _refresh(): Promise<void> {
+function _refresh(redirect: boolean = true): Promise<void> {
   if (refreshing) {
     return refreshing;
   }
@@ -38,13 +49,14 @@ function _refresh(): Promise<void> {
       else throw new Error();
     })
     .then(async (body) => {
-      if (body.code !== 200 || !body.data) {
+      if (body.code === 200 && body.data) {
+        token = body.data.access_token as string;
+        return;
+      } else if (redirect) {
         await ElMessageBox.alert("登录过期，请重新登录");
         router.currentRoute.value.name == "home" && router.push("/login");
-        throw new Error();
       }
-      // localStorage.setItem("at", body.data.access_token as string);
-      token = body.data.access_token as string;
+      throw new Error();
     })
     .finally(() => {
       refreshing = null;
@@ -112,7 +124,7 @@ export async function doRequest<T>(
         message: "请稍后再试",
         type: "error",
       });
-      return {code:200,msg:"none"};
+      return { code: 200, msg: "none" };
     } else {
       return json; // 成功
     }
