@@ -1,21 +1,25 @@
 <template>
     <div class="single">
         <template v-if="question">
-            <h1>评分任务</h1>
             <ElDescriptions title="评分任务信息" border :column="2">
                 <ElDescriptionsItem label="标题">{{ question.title }}</ElDescriptionsItem>
                 <ElDescriptionsItem label="最大分值">{{ question.max_score }}</ElDescriptionsItem>
             </ElDescriptions>
-            <span ref="target"></span>
-            <ElCarousel ref="carousel" indicator-position="none" :autoplay="false" arrow="always"
+            <!-- <ElCarousel ref="carousel" indicator-position="none" :autoplay="false" arrow="always"
                 :height="`${height}px`">
-                <ElCarouselItem v-for="answer in question.answers" :name="answer.id.toString()">
-                    <ElScrollbar>
-                        <SingleRate :rate="answer" :step="question.score_step || 1" :max="question.max_score || 10">
-                        </SingleRate>
-                    </ElScrollbar>
-                </ElCarouselItem>
-            </ElCarousel>
+                <ElCarouselItem v-for="answer in question.answers" :name="answer.id.toString()"> -->
+            <!-- <ElScrollbar> -->
+            <AutoLoad v-for="answer in question.answers" :key="answer.id" :visible="answer.id === activeAnswerId">
+
+                <SingleRate :name="answer.id.toString()" :rate="answer" :step="question.score_step || 1"
+                    :max="question.max_score || 10" :type="question.type" @previous="previous" @next="next">
+                </SingleRate>
+
+            </AutoLoad>
+
+            <!-- </ElScrollbar> -->
+            <!-- </ElCarouselItem>
+            </ElCarousel> -->
         </template>
 
         <el-skeleton :rows="5" animated v-else />
@@ -23,23 +27,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { onMounted, ref, watchEffect } from 'vue';
 import type { ScoreQuestion, ScoreQuestionDetail } from '../../interfaces';
 import { doRequest } from '../../common';
 
 const props = defineProps<{
     questionAbstract: ScoreQuestion,
+    activeId: Number,
 }>();
 
 const question = ref<ScoreQuestionDetail>();
-
-const target = ref<HTMLSpanElement[]>();
-const height = computed(() => {
-    if (!target.value) return 300;
-    const rect = target.value[0]?.getBoundingClientRect();
-    if (!rect) return 300;
-    return window.innerHeight - rect.top - 20;
-});
 
 async function getQuestion() {
     const detail = await doRequest<ScoreQuestionDetail>(`/api/score/${props.questionAbstract.id}`, 'get');
@@ -55,14 +52,72 @@ async function getQuestion() {
         ...props.questionAbstract,
         ...detail.data
     }
-
+    const answers = question.value.answers;
+    for (let answer of answers) {
+        if (answer.score == 0) {
+            activeAnswerId.value = answer.id;
+            return;
+        }
+    }
+    if (answers[0]) {
+        activeAnswerId.value = answers[0].id
+    }
 }
 
+const activeAnswerId = ref<number>();
+
 getQuestion();
+
+function keypressEvent(e: KeyboardEvent) {
+    if (e.key === 'b') {
+        previous();
+    } else if (e.key === 'n') {
+        next();
+    }
+}
+onMounted(() => {
+    window.addEventListener('keypress', keypressEvent);
+});
+
+watchEffect(() => {
+    if (props.questionAbstract.id === props.activeId) {
+        window.addEventListener('keypress', keypressEvent);
+    } else {
+        window.removeEventListener('keypress', keypressEvent);
+    }
+})
+
+async function previous() {
+    const answers = question.value?.answers;
+    if (activeAnswerId.value === undefined || !answers) {
+        ElNotification({
+            title: "操作失败",
+        })
+        return;
+    }
+    const index = answers.findIndex((answer) => answer.id === activeAnswerId.value);
+    let newindex = (index - 1 + answers.length) % answers.length;
+    // console.log(`newindex: ${newindex}`);
+    if (!answers[newindex]) { return; }
+    activeAnswerId.value = answers[newindex].id;
+}
+async function next() {
+    const answers = question.value?.answers;
+    if (activeAnswerId.value === undefined || !answers) {
+        ElNotification({
+            title: "操作失败",
+        })
+        return;
+    }
+    const index = answers.findIndex((answer) => answer.id === activeAnswerId.value);
+    let newindex = (index + 1) % answers.length;
+    if (!answers[newindex]) { return; }
+    activeAnswerId.value = answers[newindex].id;
+}
 </script>
 
 <style scoped>
-.single {
-    margin: max(3%, 20px);
+div.single {
+    padding: 20px 30px;
 }
 </style>

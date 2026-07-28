@@ -51,7 +51,7 @@ export interface ScoreTask {
 export interface ScoreQuestion {
   id: number;
   title: string;
-  type: string;
+  type: QuestionType;
 }
 
 export interface ScoreQuestionDetail extends ScoreQuestion {

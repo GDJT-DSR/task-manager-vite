@@ -29,13 +29,13 @@
           </el-dropdown>
         </div>
       </el-header>
-      <el-main>
+      <el-main style="position: relative;">
         <!-- <TaskList v-if="active.startsWith('1-')" :active-id="activeId" :tasks="tasks"></TaskList> -->
         <AutoLoad :visible="active.startsWith('1-')" v-if="tasks">
           <TaskList :active-id="activeId" :tasks="tasks"></TaskList>
         </AutoLoad>
         <AutoLoad :visible="active.startsWith('2-')" v-if="rates">
-          <RateList :active-id="activeId" :rates="rates"></RateList>
+          <RateList :active-id="activeId" :answer-active-id="answerActiveId" :rates="rates"></RateList>
         </AutoLoad>
         <el-empty v-if="!active">
           <template #description>
@@ -199,6 +199,9 @@ const route = useRoute();
 const defaultActive = route.params.id as string | undefined;
 const active = ref<string>(defaultActive ?? '');
 const activeId = computed(() => parseInt(active.value.slice(2)));
+const adefaultActive = route.params.aid as string | undefined;
+const aactive = ref<string>(adefaultActive ?? '');
+const answerActiveId = computed(() => parseInt(aactive.value) || 0);
 
 function selectHandler(index: string) {
   if (isMobileRef.value) {

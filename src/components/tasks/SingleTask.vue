@@ -7,7 +7,7 @@
 
 
         <el-col :span="24" class="total" v-if="showTotal">
-            <el-statistic title="总分" :value="total" />
+            <el-statistic title="总分" :value="total" :suffix="`/ ${totalMax}`" />
         </el-col>
 
         <el-collapse expand-icon-position="left" class="el-collapse" v-model="opens">
@@ -81,7 +81,7 @@ const showTotal = computed<boolean>(() => {
     if (!v) return false;
     for (let k of v.questions) {
         const score = k.answer?.score;
-        if (!score || score === -1) {
+        if (typeof score === 'undefined') {
             return false;
         }
     }
@@ -89,6 +89,7 @@ const showTotal = computed<boolean>(() => {
 })
 const total = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + parseScore(current.answer?.score), 0));
 
+const totalMax = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + current.max_score, 0));
 
 function parseScore(score: number | undefined): number {
     if (score && score !== -1) {
@@ -98,7 +99,7 @@ function parseScore(score: number | undefined): number {
     }
 }
 
-onBeforeUpdate(()=>{
+onBeforeUpdate(() => {
     if (props.visible && !task.value) {
         getTaskDetail();
     }

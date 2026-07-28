@@ -13,7 +13,7 @@ export const router = createRouter({
       name: "login",
     },
     {
-      path: "/home/:id?",
+      path: "/home/:id?/:aid?",
       component: () => import("./components/Home.vue"),
       name: "home",
     },

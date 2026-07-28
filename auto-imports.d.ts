@@ -7,5 +7,6 @@
 export {}
 declare global {
   const ElN: typeof import('element-plus/es').ElN
+  const ElNo: typeof import('element-plus/es').ElNo
   const ElNotification: typeof import('element-plus/es').ElNotification
 }

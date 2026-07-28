@@ -1,6 +1,9 @@
 <template>
     <div class="sub-desc" v-if="sub.desc">
-        <vue-katex :content="sub.desc" />
+        <!-- <vue-katex :content="sub.desc" /> -->
+        <div v-katex:auto style="white-space: pre-wrap;">
+            {{ sub.desc }}
+        </div>
         <el-image-p class="img" v-if="sub.settings?.img" :src="sub.settings.img"></el-image-p>
     </div>
     <div class="record" v-if="sub.answer?.content">
@@ -8,7 +11,10 @@
         <div class="title">我的回答：</div>
         <!-- <div class="answer">{{ sub.record.content }}</div> -->
         <div class="answer">
-            <vue-katex :content="sub.answer.content" v-if="sub.type === 'fill_in'" />
+            <!-- <vue-katex :content="sub.answer.content" v-if="sub.type === 'fill_in'" /> -->
+            <div v-if="sub.type === 'fill_in'" v-katex:auto style="white-space: pre-wrap;">
+                {{ sub.answer.content }}
+            </div>
             <div v-else-if="sub.type === 'upload'">
                 <el-image-p :src="`/uploads/${sub.answer.content}`"></el-image-p>
             </div>
@@ -18,7 +24,7 @@
         <br />
 
     </div>
-    <el-button @click="showDialog = true">{{ sub.answer ? '更改回答' : '填写回答' }}</el-button>
+    <el-button v-if="sub.type != 'none'" @click="showDialog = true">{{ sub.answer ? '更改回答' : '填写回答' }}</el-button>
     <!-- <teleport to="#teleport">
         <el-dialog v-model="showDialog" title="我的回答">
 
@@ -29,10 +35,13 @@
             <el-dialog v-model="showDialog" title="我的回答">
                 <el-form v-model="form" v-if="sub.type === 'fill_in'">
                     <el-form-item label="内容" label-position="top">
-                        <el-input v-model="form.content" type="textarea" height="100"></el-input>
+                        <el-input v-model="form.content" type="textarea" height="300"></el-input>
+                        <!-- <MathEditor v-model="form.content"></MathEditor> -->
+                        <!-- <VueMathjaxBeautiful :inline-mode="true" :existing-latex="formula" @insert="handleInsert" /> -->
                     </el-form-item>
                     <el-form-item>
                         <el-button type="primary" @click="updateContent">保存</el-button>
+                        <el-button type="danger" @click="clearContent" v-if="sub.answer">删除</el-button>
                     </el-form-item>
                 </el-form>
                 <el-upload ref="upload" class="upload-demo" action="" :limit="1" :on-exceed="handleExceed"
@@ -61,7 +70,6 @@ import type { Question } from '../../interfaces';
 import AutoLoad from '../common/AutoLoad.vue';
 import { genFileId, type NotificationParams, type UploadInstance, type UploadProps, type UploadRawFile, type UploadRequestOptions } from 'element-plus';
 import { doRequest } from '../../common';
-
 
 const prop = defineProps<{ sub: Question }>();
 const emit = defineEmits(['update']);
@@ -103,6 +111,13 @@ async function updateContent() {
     }
     showDialog.value = false;
 }
+async function clearContent() {
+    ElNotification({
+        title: '删除失败',
+        message: '权限不足',
+        type: 'error'
+    })
+}
 
 const upload = ref<UploadInstance>()
 
@@ -133,7 +148,7 @@ async function doUpload(opt: UploadRequestOptions): Promise<void> {
     const form = new FormData();
     form.append('file', file);
     try {
-        const resp = await doRequest<void>(`/api/answer/${prop.sub.id}/upload`, 'post', form);
+        const resp = await doRequest<void>(`/api/answer/${prop.sub.id}/image`, 'post', form);
         if (resp.code !== 200) {
             param = { ...param, message: resp.msg || '服务器错误' }
             throw new Error(resp.msg || '服务器错误');
@@ -152,6 +167,7 @@ async function doUpload(opt: UploadRequestOptions): Promise<void> {
     }
 
 }
+
 </script>
 
 <style>
