@@ -15,27 +15,53 @@ export interface TaskDetails extends Task {
   start_at?: string;
   end_at?: string;
   img?: string;
-  changable: boolean;
-  submittable: boolean;
+  state: number;
 }
 
 export type QuestionType = "fill_in" | "choose" | "upload" | "none";
-export interface Question {
+interface QuestionBase {
   id: number;
   title: string;
   desc?: string;
   type: QuestionType;
-  settings?: any;
-  index: number;
   answer?: Answer;
   max_score: number;
+  settings?: {
+    imgs?: string[];
+  };
 }
+
+export interface FillInOrUploadQuestion extends QuestionBase {
+  type: "fill_in" | "upload";
+  settings?: {
+    imgs?: string[];
+    answer?: string;
+    answer_imgs?: string[];
+  };
+}
+export interface ChooseQuestion extends QuestionBase {
+  type: "choose";
+  settings: {
+    imgs?: string[];
+    answer?: string;
+    choices: string[];
+    multiple?: boolean; // 默认false
+  };
+}
+export interface NoneQuestion extends QuestionBase {
+  type: "none";
+  settings?: {
+    imgs?: string[];
+  };
+}
+
+export type Question = FillInOrUploadQuestion | ChooseQuestion | NoneQuestion;
+
 export interface Answer {
   id: number;
   updated_at: string;
   content: string;
-  img?: string;
-  index: number;
+  details?: any;
   score?: number;
 }
 

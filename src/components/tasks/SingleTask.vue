@@ -15,7 +15,8 @@
                 :name="sub.id" :title="sub.title">
                 <!-- <h2>{{ sub.title }}</h2> -->
                 <!-- <div class="sub-desc">{{ sub.desc }}</div> -->
-                <single-sub-task :sub="sub" @update="getTaskDetail"></single-sub-task>
+                <!-- <single-sub-task :show="!(isEnd || beforeStart)" :state="task.state" :sub="sub" @update="getTaskDetail"></single-sub-task> -->
+                <single-sub-task :show="!isEnd" :state="task.state" :sub="sub" @update="getTaskDetail"></single-sub-task>
             </el-collapse-item>
         </el-collapse>
 
@@ -49,7 +50,7 @@ const startTime = computed(() => {
     if (!startAt) {
         return undefined;
     }
-    const date = dayjs(startAt);
+    const date = dayjs.utc(startAt).tz();
     return date.format('YYYY-MM-DD HH:mm:ss')
 })
 const endTime = computed(() => {
@@ -57,7 +58,7 @@ const endTime = computed(() => {
     if (!endAt) {
         return undefined;
     }
-    const date = dayjs(endAt);
+    const date = dayjs.utc(endAt).tz();
     return date.format('YYYY-MM-DD HH:mm:ss')
 })
 
@@ -76,20 +77,24 @@ async function getTaskDetail() {
     }
 }
 
+const isEnd = computed(() => dayjs.utc().isAfter(dayjs.utc(task.value?.end_at)))
+const beforeStart = computed(() => dayjs.utc().isBefore(dayjs.utc(task.value?.start_at)))
+
 const showTotal = computed<boolean>(() => {
+    if (isEnd.value) { return true; }
     const v = task.value;
     if (!v) return false;
     for (let k of v.questions) {
         const score = k.answer?.score;
-        if (typeof score === 'undefined') {
+        if (k.type !== 'none' && typeof score === 'undefined') {
             return false;
         }
     }
     return true;
 })
-const total = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + parseScore(current.answer?.score), 0));
+const total = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + (current.type === 'none' ? 0 : parseScore(current.answer?.score)), 0));
 
-const totalMax = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + current.max_score, 0));
+const totalMax = computed(() => task.value?.questions.reduce<number>((previous, current) => previous + (current.type === 'none' ? 0 : current.max_score), 0));
 
 function parseScore(score: number | undefined): number {
     if (score && score !== -1) {

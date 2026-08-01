@@ -2,11 +2,8 @@
   <div class="wrapper">
     <ElDescriptions direction="vertical" border :column="1" title="回答详情">
       <ElDescriptionsItem label="回答内容" label-align="center" align="left">
-        <!-- <VueKatex :content="rate.content"></VueKatex> -->
-        <div v-katex:auto style="white-space: pre-wrap;" v-if="type === 'fill_in'">
-          {{ rate.content }}
-        </div>
-        <ElImage class="img" :preview-src-list="[imgContent]" v-else-if="type === 'upload'" :src="imgContent"></ElImage>
+        <FormattedLatex v-if="type === 'fill_in'">{{ rate.content }}</FormattedLatex>
+        <ElImageP class="img" v-else-if="type === 'upload'" :srcs="[`/uploads/${props.rate.content}`]"></ElImageP>
         <!-- <div v-if="rate.img">
           <el-image class="img" :src="rate.img" :preview-src-list="[rate.img]" :preview-teleported="true" />
         </div> -->
@@ -42,7 +39,7 @@
 <script setup lang="ts">
 import { ElDescriptions, ElNotification, type FormInstance } from 'element-plus';
 import type { ScoreAnswer, QuestionType } from '../../interfaces';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { doRequest } from '../../common';
 
 
@@ -60,7 +57,6 @@ let origin = props.rate.score;
 
 const emit = defineEmits(["previous", "next"])
 
-const imgContent = computed(() => `/uploads/${props.rate.content}`)
 
 function updateScrollbarHeight() {
   if (typeof window === 'undefined') {

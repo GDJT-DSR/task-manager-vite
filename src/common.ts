@@ -1,9 +1,17 @@
-import { ElMessageBox } from "element-plus";
+import { dayjs, ElMessageBox } from "element-plus";
 import type { RBody } from "./interfaces";
 import { ref } from "vue";
 import { router } from "./router";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 export const isMobileRef = ref(isMobile());
+
+// dayjs.tz.setDefault("Asia/Shanghai");
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+dayjs.tz.setDefault("Asia/Shanghai");
 
 function isMobile(): boolean {
   return window.innerWidth < 768;
@@ -162,3 +170,82 @@ export async function getPermission(): Promise<number> {
 
 export const passwordReg =
   /^(?![a-zA-Z]*$)(?![a-z\d]*$)(?![A-Z\d]*$)(?![\d!@#$%^&*(),./<>?;':"{}|`~\[\]]*$)(?![a-z!@#$%^&*(),./<>?;':"{}|`~\[\]]*$)(?![A-Z!@#$%^&*(),./<>?;':"{}|`~\[\]]*$).{6,}$/;
+
+// 实现图片压缩功能
+export function compressImage(
+  file: File,
+  maxSize: number = 1024 * 1024,
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const workerSource = `
+      self.onmessage = async ({ data }) => {
+        try {
+          const image = await createImageBitmap(new Blob([data.buffer], { type: data.type }));
+          let width = image.width;
+          let height = image.height;
+          let quality = 0.9;
+          let result;
+
+          for (let i = 0; i < 15; i++) {
+            const canvas = new OffscreenCanvas(width, height);
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("无法创建画布");
+            context.drawImage(image, 0, 0, width, height);
+            result = await canvas.convertToBlob({ type: "image/jpeg", quality });
+            if (result.size < data.maxSize) break;
+            if (quality > 0.35) {
+              quality -= 0.2;
+            } else {
+              width = Math.max(1, Math.floor(width * 0.8));
+              height = Math.max(1, Math.floor(height * 0.8));
+            }
+          }
+
+          image.close();
+          if (!result || result.size >= data.maxSize) {
+            throw new Error("图片无法压缩到指定大小");
+          }
+          self.postMessage({ buffer: await result.arrayBuffer() }, [await result.arrayBuffer()]);
+        } catch (error) {
+          self.postMessage({ error: error instanceof Error ? error.message : "图片压缩失败" });
+        }
+      };
+    `;
+    const workerUrl = URL.createObjectURL(
+      new Blob([workerSource], { type: "text/javascript" }),
+    );
+    const worker = new Worker(workerUrl);
+    const cleanup = () => {
+      worker.terminate();
+      URL.revokeObjectURL(workerUrl);
+    };
+    worker.onmessage = ({
+      data,
+    }: MessageEvent<{ buffer?: ArrayBuffer; error?: string }>) => {
+      cleanup();
+      if (data.error || !data.buffer) {
+        reject(new Error(data.error ?? "图片压缩失败"));
+        return;
+      }
+      resolve(
+        new File([data.buffer], file.name.replace(/\.[^.]+$/, ".jpg"), {
+          type: "image/jpeg",
+          lastModified: file.lastModified,
+        }),
+      );
+    };
+    worker.onerror = (error) => {
+      cleanup();
+      reject(error);
+    };
+    file
+      .arrayBuffer()
+      .then((buffer) =>
+        worker.postMessage({ buffer, type: file.type, maxSize }, [buffer]),
+      )
+      .catch((error) => {
+        cleanup();
+        reject(error);
+      });
+  });
+}
