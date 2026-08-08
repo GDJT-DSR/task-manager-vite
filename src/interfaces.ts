@@ -26,6 +26,7 @@ interface QuestionBase {
   type: QuestionType;
   answer?: Answer;
   max_score: number;
+  precision: number;
   settings?: {
     imgs?: string[];
   };
@@ -58,10 +59,9 @@ export interface NoneQuestion extends QuestionBase {
 export type Question = FillInOrUploadQuestion | ChooseQuestion | NoneQuestion;
 
 export interface Answer {
-  id: number;
+  // id: number; // 用不上
   updated_at: string;
   content: string;
-  details?: any;
   score?: number;
 }
 
@@ -83,6 +83,7 @@ export interface ScoreQuestion {
 export interface ScoreQuestionDetail extends ScoreQuestion {
   max_score: number;
   score_step: number;
+  precision: number;
   answers: ScoreAnswer[];
 }
 export interface ScoreAnswer {

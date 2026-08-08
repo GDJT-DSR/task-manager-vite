@@ -3,7 +3,7 @@
     <ElDescriptions direction="vertical" border :column="1" title="回答详情">
       <ElDescriptionsItem label="回答内容" label-align="center" align="left">
         <FormattedLatex v-if="type === 'fill_in'">{{ rate.content }}</FormattedLatex>
-        <ElImageP class="img" v-else-if="type === 'upload'" :srcs="[`/uploads/${props.rate.content}`]"></ElImageP>
+        <ElImageP v-else-if="type === 'upload'" :srcs="[`/uploads/${props.rate.content}`]"></ElImageP>
         <!-- <div v-if="rate.img">
           <el-image class="img" :src="rate.img" :preview-src-list="[rate.img]" :preview-teleported="true" />
         </div> -->
@@ -11,23 +11,9 @@
       <ElDescriptionsItem label="我的评分" label-align="center" align="center">
         <ElForm ref="formRef" @submit.prevent="submit">
           <div class="form">
-            <ElButton type="primary" @click="$emit('previous')">
-              <el-icon>
-                <Back />
-              </el-icon>
-              上一个(B)
-            </ElButton>
-            <div>
-              <ElInputNumber v-model="num" size="large" :step-strictly="true" :step="step" :max="max" :min="0"
-                style="margin-right: 20px;" />
-              <ElButton type="primary" native-type="submit">提交</ElButton>
-            </div>
-            <ElButton type="primary" @click="$emit('next')">
-              <el-icon>
-                <Right />
-              </el-icon>
-              下一个(N)
-            </ElButton>
+            <ElInputNumber v-model="num" size="large" :step-strictly="true" :step="step / (10 ** precision)"
+              :precision="precision" :max="max / (10 ** precision)" :min="0" style="margin-right: 20px;" />
+            <ElButton type="primary" native-type="submit">提交</ElButton>
           </div>
         </ElForm>
       </ElDescriptionsItem>
@@ -46,6 +32,7 @@ import { doRequest } from '../../common';
 const props = defineProps<{
   rate: ScoreAnswer;
   step: number;
+  precision: number;
   max: number;
   type: QuestionType;
 }>();
@@ -84,7 +71,7 @@ async function submit() {
 
   try {
     const resp = await doRequest<Object>(`/api/score/${props.rate.id}`, 'post', {
-      target: num.value,
+      target: num.value * (10 ** props.precision),
       origin
     });
     if (resp.code === 200) {
@@ -92,7 +79,7 @@ async function submit() {
         title: "提交成功！",
         type: 'success',
       })
-      origin = num.value;
+      origin = num.value * (10 ** props.precision);
     } else {
       ElNotification({
         title: "提交失败！",
@@ -130,9 +117,7 @@ div.wrapper {
 
 .form {
   display: flex;
-}
-
-.form>div {
-  flex: 1;
+  align-items: center;
+  justify-content: center;
 }
 </style>

@@ -183,7 +183,13 @@ export function compressImage(
           const image = await createImageBitmap(new Blob([data.buffer], { type: data.type }));
           let width = image.width;
           let height = image.height;
-          let quality = 0.9;
+          const quality = 0.5;
+          const maxDimension = 1000;
+          if (width > maxDimension || height > maxDimension) {
+            const ratio = maxDimension / Math.max(width, height);
+            width = Math.max(1, Math.round(width * ratio));
+            height = Math.max(1, Math.round(height * ratio));
+          }
           let result;
 
           for (let i = 0; i < 15; i++) {
@@ -193,12 +199,8 @@ export function compressImage(
             context.drawImage(image, 0, 0, width, height);
             result = await canvas.convertToBlob({ type: "image/jpeg", quality });
             if (result.size < data.maxSize) break;
-            if (quality > 0.35) {
-              quality -= 0.2;
-            } else {
-              width = Math.max(1, Math.floor(width * 0.8));
-              height = Math.max(1, Math.floor(height * 0.8));
-            }
+            width = Math.max(1, Math.floor(width * 0.8));
+            height = Math.max(1, Math.floor(height * 0.8));
           }
 
           image.close();

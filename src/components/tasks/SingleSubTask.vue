@@ -99,11 +99,11 @@
     </auto-load>
     <div v-if="(typeof sub.answer?.score) !== 'undefined'">
         <el-divider></el-divider>
-        <div class="title">得分：{{ sub.answer?.score }}分 / {{ sub.max_score }}分</div>
+        <div class="title">得分：{{ sub.answer?.score / ratio }}分 / {{ sub.max_score / ratio }}分</div>
     </div>
 </template>
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { Question } from '../../interfaces';
 import AutoLoad from '../common/AutoLoad.vue';
 import { genFileId, type NotificationParams, type UploadInstance, type UploadProps, type UploadRawFile, type UploadRequestOptions } from 'element-plus';
@@ -125,6 +125,7 @@ const fillinForm = reactive({
 const chooseForm = reactive({
     choices: props.sub.answer?.content.split(',').map(str => parseInt(str)) ?? []
 });
+const ratio = computed(()=>10**props.sub.precision);
 
 
 async function updateContent() {
